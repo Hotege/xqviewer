@@ -1,0 +1,62 @@
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <script src='echarts.min.js'></script>
+</head>
+<body>
+    <div id="box" style="width: 800px; height: 600px; border: 1px solid #ccc"></div>
+    <script type="text/javascript">
+        var dataString = '{{ .dataString }}';
+        var dataObject = JSON.parse(dataString);
+        var myChart = echarts.init(document.getElementById('box'));
+        var option = {
+            animation: false,
+            tooltip: {
+                trigger: 'axis',
+            },
+            xAxis: [
+                {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: [dataObject[0]['list'][0]['date']],
+                },
+            ],
+            yAxis: [
+                {
+                    type: 'value',
+                    boundaryGap: false,
+                    scale: true,
+                },
+            ],
+            series: [
+                {
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    data: [1.0000],
+                },
+                {
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    data: [1.0000],
+                },
+            ],
+        };
+        for (var i = 0; i < dataObject[0]['list'].length; i++) {
+            option['xAxis'][0]['data'].push(dataObject[0]['list'][i]['date']);
+        }
+        for (var i = 0; i < dataObject.length; i++) {
+            for (var j = 0; j < dataObject[i]['list'].length; j++) {
+                if (i == 0) {
+                    option['series'][i]['data'].push(dataObject[i]['list'][j]['value']);
+                }
+                if (i == 1) {
+                    option['series'][i]['data'].push(Math.round(dataObject[i]['list'][j]['value'] / dataObject[i]['list'][0]['value'] * 10000.0) / 10000.0);
+                }
+            }
+        }
+        myChart.setOption(option);
+    </script>
+</body>
+</html>
