@@ -13,7 +13,16 @@ for _, r in string.gmatch(__buffer, '(%s+)(/[A-Za-z0-9%.%%]*)') do
 end
 
 if (#route > 1) then
-    if (route ~= "/echarts.min.js") then
+    files = { "/echarts.min.js", "/chartRender.js" }
+    flag = (function()
+        for _, v in pairs(files) do
+            if (route == v) then
+                return true
+            end
+        end
+        return false
+    end)()
+    if (flag == false) then
         local symbol = string.sub(route, 2, #route)
         local json = __sendRequest("https://xueqiu.com/cubes/nav_daily/all.json?cube_symbol=" .. symbol)
         template = (function()
@@ -31,7 +40,7 @@ if (#route > 1) then
         header = string.gsub(header, "{{(%s*).addedHeader(%s*)}}", "")
     else
         local f = (function()
-            local file = io.open("./echarts.min.js", "rb")
+            local file = io.open("." .. route, "rb")
             local len = file:seek("end")
             file:seek("set")
             local data = file:read(len)
