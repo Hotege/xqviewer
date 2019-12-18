@@ -9,3 +9,8 @@ gcc server.c \
 -I ~/opensources/curl-7.67.0/install/include \
 -L ~/opensources/curl-7.67.0/install/lib \
 -llua -lm -lcurl
+
+upx_check=`whereis upx | awk '{print $2}'`
+if [[ -n $upx_check ]]; then
+    $upx_check -9 xqviewer
+fi
