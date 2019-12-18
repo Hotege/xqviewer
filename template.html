@@ -7,60 +7,7 @@
     <div id="box" style="width: 800px; height: 600px; border: 1px solid #ccc"></div>
     <script type="text/javascript">
         var dataString = '{{ .dataString }}';
-        var dataObject = JSON.parse(dataString);
-        var myChart = echarts.init(document.getElementById('box'));
-        var option = {
-            animation: false,
-            tooltip: {
-                trigger: 'axis',
-                axisPointer: {
-                    type: 'cross',
-                    snap: true,
-                },
-            },
-            xAxis: [
-                {
-                    type: 'category',
-                    boundaryGap: false,
-                    data: [dataObject[0]['list'][0]['date']],
-                },
-            ],
-            yAxis: [
-                {
-                    type: 'value',
-                    boundaryGap: false,
-                    scale: true,
-                },
-            ],
-            series: [
-                {
-                    type: 'line',
-                    smooth: true,
-                    symbol: 'none',
-                    data: [1.0000],
-                },
-                {
-                    type: 'line',
-                    smooth: true,
-                    symbol: 'none',
-                    data: [1.0000],
-                },
-            ],
-        };
-        for (var i = 0; i < dataObject[0]['list'].length; i++) {
-            option['xAxis'][0]['data'].push(dataObject[0]['list'][i]['date']);
-        }
-        for (var i = 0; i < dataObject.length; i++) {
-            for (var j = 0; j < dataObject[i]['list'].length; j++) {
-                if (i == 0) {
-                    option['series'][i]['data'].push(dataObject[i]['list'][j]['value']);
-                }
-                if (i == 1) {
-                    option['series'][i]['data'].push(Math.round(dataObject[i]['list'][j]['value'] / dataObject[i]['list'][0]['value'] * 10000.0) / 10000.0);
-                }
-            }
-        }
-        myChart.setOption(option);
+        eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('5 2=A.z(y);5 p=D.C(B.x(\'s\'));5 6={w:e,t:{u:\'v\',E:{7:\'K\',J:8,},},f:[{7:\'M\',h:e,4:[2[0][\'3\'][0][\'o\']],},],L:[{7:\'9\',h:e,F:8,},],d:[{7:\'n\',g:8,k:\'l\',4:[1.m],},{7:\'n\',g:8,k:\'l\',4:[1.m],},],};a(5 i=0;i<2[0][\'3\'].c;i++){6[\'f\'][0][\'4\'].b(2[0][\'3\'][i][\'o\'])}a(5 i=0;i<2.c;i++){a(5 j=0;j<2[i][\'3\'].c;j++){r(i==0){6[\'d\'][i][\'4\'].b(2[i][\'3\'][j][\'9\'])}r(i==1){6[\'d\'][i][\'4\'].b(H.I(2[i][\'3\'][j][\'9\']/ 2[i][\'3\'][0][\'9\'] * q.0) /q.0)}}}p.G(6);',49,49,'||dataObject|list|data|var|option|type|true|value|for|push|length|series|false|xAxis|smooth|boundaryGap|||symbol|none|0000|line|date|myChart|10000|if|box|tooltip|trigger|axis|animation|getElementById|dataString|parse|JSON|document|init|echarts|axisPointer|scale|setOption|Math|round|snap|cross|yAxis|category'.split('|'),0,{}));
     </script>
 </body>
 </html>
