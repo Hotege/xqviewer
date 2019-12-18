@@ -21,6 +21,9 @@
 #define QUEUE 20
 #define BUFFER_SIZE 4096
 #define MAX_STRING 256
+#define XQ_CURL_CLIENT_HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
+#define XQ_CURL_COOKIE_HEADER "Cookie: aliyungf_tc=AQAAAKnH+yP03woAiU49O8zEmcY2VNyA; acw_tc=2760823c15764840817188111ef079e879f818c0350366ff06a76c1903fc36; s=ds11kuup8i; xq_a_token=c9d3b00a3bd89b210c0024ce7a2e049f437d4df3; xq_r_token=8712d4cae3deaa2f3a3d130127db7a20adc86fb2; u=471576484068826; device_id=962a2b4385abd60f6c8f81cc5276d089; Hm_lvt_1db88642e346389874251b5a1eded6e3=1576484071; Hm_lpvt_1db88642e346389874251b5a1eded6e3=1576484071"
+#define XQ_CURL_HOST_HEADER "Host: xueqiu.com"
 
 struct MSG
 {
@@ -55,9 +58,9 @@ LUALIB_API int __sendRequest(lua_State *l)
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
         struct curl_slist *header = NULL;
-        header = curl_slist_append(header, "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36");
-        header = curl_slist_append(header, "Cookie: aliyungf_tc=AQAAAKnH+yP03woAiU49O8zEmcY2VNyA; acw_tc=2760823c15764840817188111ef079e879f818c0350366ff06a76c1903fc36; s=ds11kuup8i; xq_a_token=c9d3b00a3bd89b210c0024ce7a2e049f437d4df3; xq_r_token=8712d4cae3deaa2f3a3d130127db7a20adc86fb2; u=471576484068826; device_id=962a2b4385abd60f6c8f81cc5276d089; Hm_lvt_1db88642e346389874251b5a1eded6e3=1576484071; Hm_lpvt_1db88642e346389874251b5a1eded6e3=1576484071");
-        header = curl_slist_append(header, "Host: xueqiu.com");
+        header = curl_slist_append(header, XQ_CURL_CLIENT_HEADER);
+        header = curl_slist_append(header, XQ_CURL_COOKIE_HEADER);
+        header = curl_slist_append(header, XQ_CURL_HOST_HEADER);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeMemoryCallback);
         struct MSG msg = { NULL, 0 };
