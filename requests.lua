@@ -73,7 +73,7 @@ else
         header = string.gsub(header, "{{(%s*).addedHeader(%s*)}}", "")
     else
         template = (function()
-            local file = io.open("./found.html", "rb")
+            local file = io.open("./302.html", "rb")
             local len = file:seek("end")
             file:seek("set")
             local data = file:read(len)
