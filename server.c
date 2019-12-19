@@ -170,15 +170,26 @@ int main(int argc, char *argv[])
         lua_close(L);
         clock_t t2 = clock();
 
-        time_t now;
+        /*time_t now;
         time(&now);
         memset(datetime, 0, MAX_STRING);
         strcpy(datetime, ctime(&now));
-        datetime[strlen(datetime) - 1] = 0;
+        datetime[strlen(datetime) - 1] = 0;*/
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        struct tm *_tm;
+        _tm = localtime((time_t*)&tv.tv_sec);
+        char dt[MAX_STRING];
+        memset(dt, 0, MAX_STRING);
+        strftime(dt, MAX_STRING, "%Y-%m-%d %H:%M:%S", _tm);
+        char ms[MAX_STRING];
+        memset(ms, 0, MAX_STRING);
+        sprintf(ms, "'%03d", tv.tv_usec / 1000);
+        strcat(dt, ms);
         char *clientIP = inet_ntoa(clientAddr.sin_addr);
         int clientPort = ntohs(clientAddr.sin_port);
         getLogString(method, headers, buffer);
-        printf("DateTime:[%s] From:[%s:%d] Method:[%s] %s Takes:[%d]\n", datetime, clientIP, clientPort, method, headers, (t2 - t1) / 1000);
+        printf("DateTime:[%s] From:[%s:%d] Method:[%s] %s Takes:[%d]\n", dt, clientIP, clientPort, method, headers, (t2 - t1) / 1000);
 
         close(conn);
     }
