@@ -41,20 +41,6 @@ if (#route > 1) then
     else
         __sendFile(__conn, "." .. route)
         return
---[[
-        local f = (function()
-            local file = io.open("." .. route, "rb")
-            local len = file:seek("end")
-            file:seek("set")
-            local data = file:read(len)
-            io.close(file)
-            return data
-        end)()
-        html = f
-        header = string.gsub(header, "{{(%s*).responseCode(%s*)}}", "200")
-        header = string.gsub(header, "{{(%s*).responseStatus(%s*)}}", "OK")
-        header = string.gsub(header, "{{(%s*).addedHeader(%s*)}}", "")
-]]--
     end
 else
     code = ""
