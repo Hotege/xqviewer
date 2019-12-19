@@ -89,7 +89,32 @@ LUALIB_API int __sendHttpResponse(lua_State *l)
     return 0;
 }
 
-void getLogString(char method[BUFFER_SIZE], char headers[BUFFER_SIZE], const char *buffer)
+LUALIB_API int __sendFile(lua_State *l)
+{
+    const char *filename = luaL_checkstring(l, -1);
+    int conn = luaL_checkinteger(l, -2);
+    FILE *f = fopen(filename, "rb");
+    fseek(f, 0, SEEK_END);
+    long fs = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    unsigned char *d = malloc(fs);
+    memset(d, 0, fs);
+    fread(d, fs, sizeof(unsigned char), f); 
+    char fileHeader[BUFFER_SIZE];
+    memset(fileHeader, 0, BUFFER_SIZE);
+    static const char *fileHeaderString =
+"HTTP/1.1 200 OK\r\n"
+"Cache-Control: max-age: 3600\r\n"
+"Content-Length: ";
+    sprintf(fileHeader, "%s%d\r\n\r\n\0", fileHeaderString, fs);
+    send(conn, fileHeader, strlen(fileHeader), 0); 
+    send(conn, d, fs, 0); 
+    free(d);
+    d = NULL;
+    fclose(f);
+}
+
+void getLogString(char method[BUFFER_SIZE], char headers[BUFFER_SIZE], char path[BUFFER_SIZE], const char *buffer)
 {
     lua_State *L = luaL_newstate();
     luaopen_base(L);
@@ -108,6 +133,9 @@ void getLogString(char method[BUFFER_SIZE], char headers[BUFFER_SIZE], const cha
     lua_getglobal(L, "headerString");
     memset(headers, 0, BUFFER_SIZE);
     strcpy(headers, lua_tostring(L, -1));
+    lua_getglobal(L, "pathString");
+    memset(path, 0, BUFFER_SIZE);
+    strcpy(path, lua_tostring(L, -1));
     lua_close(L);
 }
 
@@ -133,7 +161,7 @@ int main(int argc, char *argv[])
     memset(buffer, 0, BUFFER_SIZE);
     struct sockaddr_in clientAddr;
     socklen_t length = sizeof(clientAddr);
-    char method[BUFFER_SIZE], headers[BUFFER_SIZE];
+    char method[BUFFER_SIZE], headers[BUFFER_SIZE], path[BUFFER_SIZE];
     char datetime[MAX_STRING];
     while (1)
     {
@@ -160,6 +188,8 @@ int main(int argc, char *argv[])
         lua_setglobal(L, "__sendRequest");
         lua_pushcfunction(L, __sendHttpResponse);
         lua_setglobal(L, "__sendHttpResponse");
+        lua_pushcfunction(L, __sendFile);
+        lua_setglobal(L, "__sendFile");
         lua_pushstring(L, buffer);
         lua_setglobal(L, "__buffer");
         lua_pushinteger(L, conn);
@@ -170,11 +200,6 @@ int main(int argc, char *argv[])
         lua_close(L);
         clock_t t2 = clock();
 
-        /*time_t now;
-        time(&now);
-        memset(datetime, 0, MAX_STRING);
-        strcpy(datetime, ctime(&now));
-        datetime[strlen(datetime) - 1] = 0;*/
         struct timeval tv;
         gettimeofday(&tv, NULL);
         struct tm *_tm;
@@ -188,8 +213,8 @@ int main(int argc, char *argv[])
         strcat(dt, ms);
         char *clientIP = inet_ntoa(clientAddr.sin_addr);
         int clientPort = ntohs(clientAddr.sin_port);
-        getLogString(method, headers, buffer);
-        printf("DateTime:[%s] From:[%s:%d] Method:[%s] %s Takes:[%d]\n", dt, clientIP, clientPort, method, headers, (t2 - t1) / 1000);
+        getLogString(method, headers, path, buffer);
+        printf("DateTime:[%s] From:[%s:%d] Path:[%s] Method:[%s] %s Takes:[%d]\n", dt, clientIP, clientPort, path, method, headers, (t2 - t1) / 1000);
 
         close(conn);
     }

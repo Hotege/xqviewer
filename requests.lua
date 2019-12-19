@@ -13,7 +13,7 @@ for _, r in string.gmatch(__buffer, '(%s+)(/[A-Za-z0-9%.%%]*)') do
 end
 
 if (#route > 1) then
-    files = { "/echarts.min.js", "/chartRender.js" }
+    files = { "/favicon.ico", "/echarts.min.js", "/chartRender.js" }
     flag = (function()
         for _, v in pairs(files) do
             if (route == v) then
@@ -39,6 +39,9 @@ if (#route > 1) then
         header = string.gsub(header, "{{(%s*).responseStatus(%s*)}}", "OK")
         header = string.gsub(header, "{{(%s*).addedHeader(%s*)}}", "")
     else
+        __sendFile(__conn, "." .. route)
+        return
+--[[
         local f = (function()
             local file = io.open("." .. route, "rb")
             local len = file:seek("end")
@@ -51,6 +54,7 @@ if (#route > 1) then
         header = string.gsub(header, "{{(%s*).responseCode(%s*)}}", "200")
         header = string.gsub(header, "{{(%s*).responseStatus(%s*)}}", "OK")
         header = string.gsub(header, "{{(%s*).addedHeader(%s*)}}", "")
+]]--
     end
 else
     code = ""
