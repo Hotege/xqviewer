@@ -89,6 +89,28 @@ LUALIB_API int __sendHttpResponse(lua_State *l)
     return 0;
 }
 
+void getLogString(char method[BUFFER_SIZE], char headers[BUFFER_SIZE], const char *buffer)
+{
+    lua_State *L = luaL_newstate();
+    luaopen_base(L);
+    luaopen_table(L);
+    luaopen_package(L);
+    luaopen_io(L);
+    luaopen_os(L);
+    luaopen_string(L);
+    luaL_openlibs(L);
+    lua_pushstring(L, buffer);
+    lua_setglobal(L, "__buffer");
+    luaL_dofile(L, "./base.lua");
+    lua_getglobal(L, "methodString");
+    memset(method, 0, BUFFER_SIZE);
+    strcpy(method, lua_tostring(L, -1));
+    lua_getglobal(L, "headerString");
+    memset(headers, 0, BUFFER_SIZE);
+    strcpy(headers, lua_tostring(L, -1));
+    lua_close(L);
+}
+
 int main(int argc, char *argv[])
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -111,6 +133,8 @@ int main(int argc, char *argv[])
     memset(buffer, 0, BUFFER_SIZE);
     struct sockaddr_in clientAddr;
     socklen_t length = sizeof(clientAddr);
+    char method[BUFFER_SIZE], headers[BUFFER_SIZE];
+    char datetime[MAX_STRING];
     while (1)
     {
         int conn = accept(sockfd, (struct sockaddr*)&clientAddr, &length);
@@ -122,6 +146,7 @@ int main(int argc, char *argv[])
         memset(buffer, 0, sizeof(buffer));
         recv(conn, buffer, sizeof(buffer), 0);
 
+        clock_t t1 = clock();
         lua_State *L = luaL_newstate();
         luaopen_base(L);
         luaopen_table(L);
@@ -143,6 +168,17 @@ int main(int argc, char *argv[])
         luaL_dofile(L, "./requests.lua");
 
         lua_close(L);
+        clock_t t2 = clock();
+
+        time_t now;
+        time(&now);
+        memset(datetime, 0, MAX_STRING);
+        strcpy(datetime, ctime(&now));
+        datetime[strlen(datetime) - 1] = 0;
+        char *clientIP = inet_ntoa(clientAddr.sin_addr);
+        int clientPort = ntohs(clientAddr.sin_port);
+        getLogString(method, headers, buffer);
+        printf("DateTime:[%s] From:[%s:%d] Method:[%s] %s Takes:[%d]\n", datetime, clientIP, clientPort, method, headers, (t2 - t1) / 1000);
 
         close(conn);
     }
