@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <time.h>
+#include <pthread.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -139,6 +140,69 @@ void getLogString(char method[BUFFER_SIZE], char headers[BUFFER_SIZE], char path
     lua_close(L);
 }
 
+struct ThreadResponseParameters
+{
+    int conn;
+    char buffer[BUFFER_SIZE];
+    struct sockaddr_in clientAddr;
+};
+
+void *threadResponse(void *args)
+{
+    char method[BUFFER_SIZE], headers[BUFFER_SIZE], path[BUFFER_SIZE];
+    char datetime[MAX_STRING];
+
+    struct ThreadResponseParameters *ptr = (struct ThreadResponseParameters*)(args);
+    int conn = ptr->conn;
+    char *buffer = ptr->buffer;
+    struct sockaddr_in clientAddr = ptr->clientAddr;
+
+    clock_t t1 = clock();
+    lua_State *L = luaL_newstate();
+    luaopen_base(L);
+    luaopen_table(L);
+    luaopen_package(L);
+    luaopen_io(L);
+    luaopen_os(L);
+    luaopen_string(L);
+    luaL_openlibs(L);
+
+    lua_pushcfunction(L, __sendRequest);
+    lua_setglobal(L, "__sendRequest");
+    lua_pushcfunction(L, __sendHttpResponse);
+    lua_setglobal(L, "__sendHttpResponse");
+    lua_pushcfunction(L, __sendFile);
+    lua_setglobal(L, "__sendFile");
+    lua_pushstring(L, buffer);
+    lua_setglobal(L, "__buffer");
+    lua_pushinteger(L, conn);
+    lua_setglobal(L, "__conn");
+
+    luaL_dofile(L, "./requests.lua");
+
+    lua_close(L);
+    clock_t t2 = clock();
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    struct tm *_tm;
+    _tm = localtime((time_t*)&tv.tv_sec);
+    char dt[MAX_STRING];
+    memset(dt, 0, MAX_STRING);
+    strftime(dt, MAX_STRING, "%Y-%m-%d %H:%M:%S", _tm);
+    char ms[MAX_STRING];
+    memset(ms, 0, MAX_STRING);
+    sprintf(ms, "'%03d", tv.tv_usec / 1000);
+    strcat(dt, ms);
+    char *clientIP = inet_ntoa(clientAddr.sin_addr);
+    int clientPort = ntohs(clientAddr.sin_port);
+    getLogString(method, headers, path, buffer);
+    printf("DateTime:[%s] From:[%s:%d] Path:[%s] Method:[%s] %s Takes:[%d]\n", dt, clientIP, clientPort, path, method, headers, (t2 - t1) / 1000);
+
+    close(conn);
+    return NULL;
+}
+
 int main(int argc, char *argv[])
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -161,8 +225,6 @@ int main(int argc, char *argv[])
     memset(buffer, 0, BUFFER_SIZE);
     struct sockaddr_in clientAddr;
     socklen_t length = sizeof(clientAddr);
-    char method[BUFFER_SIZE], headers[BUFFER_SIZE], path[BUFFER_SIZE];
-    char datetime[MAX_STRING];
     while (1)
     {
         int conn = accept(sockfd, (struct sockaddr*)&clientAddr, &length);
@@ -174,49 +236,13 @@ int main(int argc, char *argv[])
         memset(buffer, 0, sizeof(buffer));
         recv(conn, buffer, sizeof(buffer), 0);
 
-        clock_t t1 = clock();
-        lua_State *L = luaL_newstate();
-        luaopen_base(L);
-        luaopen_table(L);
-        luaopen_package(L);
-        luaopen_io(L);
-        luaopen_os(L);
-        luaopen_string(L);
-        luaL_openlibs(L);
-
-        lua_pushcfunction(L, __sendRequest);
-        lua_setglobal(L, "__sendRequest");
-        lua_pushcfunction(L, __sendHttpResponse);
-        lua_setglobal(L, "__sendHttpResponse");
-        lua_pushcfunction(L, __sendFile);
-        lua_setglobal(L, "__sendFile");
-        lua_pushstring(L, buffer);
-        lua_setglobal(L, "__buffer");
-        lua_pushinteger(L, conn);
-        lua_setglobal(L, "__conn");
-
-        luaL_dofile(L, "./requests.lua");
-
-        lua_close(L);
-        clock_t t2 = clock();
-
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        struct tm *_tm;
-        _tm = localtime((time_t*)&tv.tv_sec);
-        char dt[MAX_STRING];
-        memset(dt, 0, MAX_STRING);
-        strftime(dt, MAX_STRING, "%Y-%m-%d %H:%M:%S", _tm);
-        char ms[MAX_STRING];
-        memset(ms, 0, MAX_STRING);
-        sprintf(ms, "'%03d", tv.tv_usec / 1000);
-        strcat(dt, ms);
-        char *clientIP = inet_ntoa(clientAddr.sin_addr);
-        int clientPort = ntohs(clientAddr.sin_port);
-        getLogString(method, headers, path, buffer);
-        printf("DateTime:[%s] From:[%s:%d] Path:[%s] Method:[%s] %s Takes:[%d]\n", dt, clientIP, clientPort, path, method, headers, (t2 - t1) / 1000);
-
-        close(conn);
+        pthread_t pid;
+        struct ThreadResponseParameters threadResponseParams;
+        threadResponseParams.conn = conn;
+        memset(threadResponseParams.buffer, 0, BUFFER_SIZE);
+        strcpy(threadResponseParams.buffer, buffer);
+        threadResponseParams.clientAddr = clientAddr;
+        pthread_create(&pid, NULL, threadResponse, &threadResponseParams);
     }
     return 0;
 }
